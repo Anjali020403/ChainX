@@ -1,63 +1,133 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useTable } from 'react-table';
 
-function Market() {
+const Market = () => {
   const [data, setData] = useState([]);
+  const [selectedExpiryDate, setSelectedExpiryDate] = useState('');
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('http://localhost:8080/');
-        const jsonData = await response.json();
-        setData(jsonData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
+    axios
+      .get('http://localhost:8080/data')
+      .then(response => {
+        console.log(response.data); // Check the response data
+        setData(response.data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
   }, []);
+
+  const columns = React.useMemo(
+    () => [
+      // Define the columns for the table
+      {
+        Header: 'Symbol',
+        accessor: 'Column1',
+      },
+      {
+        Header: 'Last',
+        accessor: 'Column2',
+      },
+      {
+        Header: 'Vol',
+        accessor: 'Column3',
+      },
+      {
+        Header: 'Open',
+        accessor: 'Column4',
+      },
+      {
+        Header: 'High',
+        accessor: 'Column5',
+      },
+      {
+        Header: 'Low',
+        accessor: 'Column6',
+      },
+      {
+        Header: 'Close',
+        accessor: 'Column7',
+      },
+      {
+        Header: 'Bid',
+        accessor: 'Column8',
+      },
+      {
+        Header: 'Ask',
+        accessor: 'Column9',
+      },
+      {
+        Header: 'Time',
+        accessor: 'Column10',
+      },
+      {
+        Header: 'Prev close',
+        accessor: 'Column11',
+      },
+      {
+        Header: 'Change',
+        accessor: 'Column12',
+      },
+    ],
+    []
+  );
+
+  // Filter the data based on the selected expiry date
+  const filteredData = selectedExpiryDate
+    ? data.filter(item => item.Column10 === selectedExpiryDate)
+    : data;
+
+  const {
+    getTableProps,
+    getTableBodyProps,
+    headerGroups,
+    rows,
+    prepareRow,
+  } = useTable({ columns, data: filteredData });
 
   return (
     <div>
-      <h2>Market Data</h2>
-      <table>
+      {/* Select dropdown for expiry date filter */}
+      <select
+        value={selectedExpiryDate}
+        onChange={e => setSelectedExpiryDate(e.target.value)}
+      >
+        {/* Replace the options below with your actual expiry date options */}
+        <option value="09:15:59">09:15:59</option>
+        <option value="09:16:00">09:16:00</option>
+      </select>
+
+      {/* Table */}
+      <table {...getTableProps()} style={{ border: 'solid 1px black', width: '100%' }}>
         <thead>
-          <tr>
-            <th>Symbol</th>
-            <th>Last</th>
-            <th>Vol</th>
-            <th>Open</th>
-            <th>High</th>
-            <th>Low</th>
-            <th>Close</th>
-            <th>Bid</th>
-            <th>Ask</th>
-            <th>Time</th>
-            <th>Prev close</th>
-            <th>Change</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, index) => (
-            <tr key={index}>
-              <td className="text-white">{item['Trading Symbol']}</td>
-              <td className="text-white">{item['Last Traded Price (LTP)']}</td>
-              <td className="text-white">{item['Volume']}</td>
-              <td className="text-white">{item['Open']}</td>
-              <td className="text-white">{item['High']}</td>
-              <td className="text-white">{item['Low']}</td>
-              <td className="text-white">{item['Close']}</td>
-              <td className="text-white">{item['Bid Price']}</td>
-              <td className="text-white">{item['Ask Price']}</td>
-              <td className="text-white">{item['Timestamp']}</td>
-              <td className="text-white">{item['Previous Close Price']}</td>
-              <td className="text-white">{item['Change']}</td>
+          {headerGroups.map(headerGroup => (
+            <tr {...headerGroup.getHeaderGroupProps()}>
+              {headerGroup.headers.map(column => (
+                <th {...column.getHeaderProps()} style={{ borderBottom: 'solid 3px red', background: 'aliceblue', color: 'black', fontWeight: 'bold' }}>
+                  {column.render('Header')}
+                </th>
+              ))}
             </tr>
           ))}
+        </thead>
+        <tbody {...getTableBodyProps()}>
+          {rows.map(row => {
+            prepareRow(row);
+            return (
+              <tr {...row.getRowProps()}>
+                {row.cells.map(cell => (
+                  <td {...cell.getCellProps()} style={{ padding: '10px', border: 'solid 1px gray', background: 'papayawhip' }}>
+                    {cell.render('Cell')}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
-}
+};
 
 export default Market;
